@@ -1,6 +1,5 @@
-# Implementazione openflow di hop-by-hop routing
-# usando la mappa della rete trovata con topology discovery
-#
+#Domande per prof:
+#1)Il proxy arp va chiamato prima della
 # Si richiede l'uso del topology discovery
 # ryu-manager --observe-links
 #
@@ -15,6 +14,7 @@ from ryu.lib.packet import packet, ethernet, ether_types, arp
 import networkx as nx
 
 class HopByHopSwitch(app_manager.RyuApp):
+
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
     # tutti i pacchetti al controllore
@@ -23,7 +23,6 @@ class HopByHopSwitch(app_manager.RyuApp):
         datapath = ev.msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-
         inst = [
             parser.OFPInstructionActions(
                 ofproto.OFPIT_APPLY_ACTIONS,
@@ -40,6 +39,7 @@ class HopByHopSwitch(app_manager.RyuApp):
             instructions=inst
         )
         datapath.send_msg(mod)
+
     # trova switch destinazione e porta dello switch
     def find_destination_switch(self,destination_mac):
         for host in get_all_host(self):
@@ -67,9 +67,7 @@ class HopByHopSwitch(app_manager.RyuApp):
         '''
     def create_tree(self):
         net = nx.Graph()
-
         for link in get_all_link(self):
-            #TODO: Delete duplicates
             #net.add_edge(1,2)
             #print(type(link))
             #print(link)
@@ -81,6 +79,8 @@ class HopByHopSwitch(app_manager.RyuApp):
                 #print("Test: sorce: " + str(link.src.dpid) + ", " + str(link.src.port_no) + "----destination: " + str(link.dst.dpid) + ", " + str(link.dst.port_no) )
         T = nx.minimum_spanning_tree(net)
         return T
+
+
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
 
@@ -95,7 +95,6 @@ class HopByHopSwitch(app_manager.RyuApp):
 
         # se ARP esegui proxy arp
         if eth.ethertype == ether_types.ETH_TYPE_ARP:
-            #TODO remove comment
             self.proxy_arp(msg)
             return
 
@@ -175,7 +174,7 @@ class HopByHopSwitch(app_manager.RyuApp):
         # lista di azioni
         # 1. azione FLOOD
         actions = []
-        print("Test")
+        #print("Test")
 
         #print("SWITCH: "+str(datapath.id))
         #print("Info:   ")
@@ -198,6 +197,8 @@ class HopByHopSwitch(app_manager.RyuApp):
             if host.port.dpid == datapath.id:
                 if(host.port.port_no != in_port):
                     actions.append(parser.OFPActionOutput(int(host.port.port_no)))
+
+        #TODO: check this if
         if dst_dpid is None:
             # print "DP: ", datapath.id, "Host not found: ", pkt_ip.dst
             return
@@ -207,29 +208,21 @@ class HopByHopSwitch(app_manager.RyuApp):
             actions = [parser.OFPActionOutput(output_port)]
         '''
         if(len(actions)!=0):
-        # lista di istruzioni
-        # 1. esegui la lista di azioni immediatamente
             inst = [
                 parser.OFPInstructionActions(
                     ofproto.OFPIT_APPLY_ACTIONS,
                     actions
                 )
             ]
-
-            # prepara un messaggio Modify-State
-            # priorita' 1
             mod = parser.OFPFlowMod(
                 datapath=datapath,
                 priority=1,
                 match=match,
                 instructions=inst
             )
-
-            # invia allo switch
             datapath.send_msg(mod)
 
             assert msg.buffer_id == ofproto.OFP_NO_BUFFER
-
             out = parser.OFPPacketOut(
                 datapath=datapath,
                 buffer_id=msg.buffer_id,
@@ -238,9 +231,6 @@ class HopByHopSwitch(app_manager.RyuApp):
                 data=msg.data
             )
             datapath.send_msg(out)
-
-            # Add and send rules
-
         return
 
     def proxy_arp(self, msg):
@@ -266,6 +256,7 @@ class HopByHopSwitch(app_manager.RyuApp):
 
         # host non trovato
         if destination_host_mac is None:
+            print("Non trovato")
             return
 
         pkt_out = packet.Packet()
