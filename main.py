@@ -1,5 +1,3 @@
-#Domande per prof:
-#1)Il proxy arp va chiamato prima della
 # Si richiede l'uso del topology discovery
 # ryu-manager --observe-links
 #
@@ -47,28 +45,9 @@ class HopByHopSwitch(app_manager.RyuApp):
                 return (host.port.dpid, host.port.port_no)
         return (None,None)
 
-
-    '''
-
-    def find_next_hop_to_destination(self,source_id,destination_id):
-        net = nx.DiGraph()
-        for link in get_all_link(self):
-            net.add_edge(link.src.dpid, link.dst.dpid, port=link.src.port_no)
-
-        path = nx.shortest_path(
-            net,
-            source_id,
-            destination_id
-        )
-
-        first_link = net[ path[0] ][ path[1] ]
-
-        return first_link['port']
-        '''
     def create_tree(self):
         net = nx.Graph()
         for link in get_all_link(self):
-            #net.add_edge(1,2)
             #print(type(link))
             #print(link)
             if(net.has_edge(link.src.dpid, link.dst.dpid)==False):
@@ -79,7 +58,6 @@ class HopByHopSwitch(app_manager.RyuApp):
                 #print("Test: sorce: " + str(link.src.dpid) + ", " + str(link.src.port_no) + "----destination: " + str(link.dst.dpid) + ", " + str(link.dst.port_no) )
         T = nx.minimum_spanning_tree(net)
         return T
-
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
@@ -101,59 +79,9 @@ class HopByHopSwitch(app_manager.RyuApp):
         # ignora pacchetti non IPv4 (es. ARP, LLDP)
         if eth.ethertype != ether_types.ETH_TYPE_IP:
             return
-
-        '''destination_mac = eth.dst
-
-        # trova switch destinazione
-        (dst_dpid, dst_port) = self.find_destination_switch(destination_mac)
-
-        # host non trovato
-        if dst_dpid is None:
-            # print "DP: ", datapath.id, "Host not found: ", pkt_ip.dst
-            return
-
-        if dst_dpid == datapath.id:
-            # da usare se l'host e' direttamente collegato
-            output_port = dst_port
-        else:
-            # host non direttamente collegato
-            output_port = self.find_next_hop_to_destination(datapath.id,dst_dpid)
-
-        # print "DP: ", datapath.id, "Host: ", pkt_ip.dst, "Port: ", output_port
-
-        # inoltra il pacchetto corrente
-        actions = [ parser.OFPActionOutput(output_port) ]
-        out = parser.OFPPacketOut(
-            datapath=datapath,
-            buffer_id=msg.buffer_id,
-            in_port=in_port,
-            actions=actions,
-            data=msg.data
-        )
-        datapath.send_msg(out)
-
-        # aggiungi la regola
-        match = parser.OFPMatch(
-            eth_dst=destination_mac
-            )
-        inst = [
-            parser.OFPInstructionActions(
-                ofproto.OFPIT_APPLY_ACTIONS,
-                [ parser.OFPActionOutput(output_port) ]
-            )
-        ]
-        mod = parser.OFPFlowMod(
-            datapath=datapath,
-            priority=10,
-            match=match,
-            instructions=inst,
-            buffer_id=msg.buffer_id
-        )
-        datapath.send_msg(mod)
-        '''
         T = self.create_tree()
         #print edges
-        #print(T.edges.data())
+        print(T.edges.data())
         nodesAndPort = {}
         for (node,data) in T.nodes(data=True):
             nodesAndPort[str(node)] = []
@@ -169,14 +97,12 @@ class HopByHopSwitch(app_manager.RyuApp):
             #print("\n")
             nodesAndPort[str(nodeSRC)].append(str(data["info"][str(nodeSRC)]))
             nodesAndPort[str(nodeDST)].append(str(data["info"][str(nodeDST)]))
-        #match = parser.OFPMatch()
-        match = parser.OFPMatch(eth_dst=dst,eth_src=eth.src)
-        # lista di azioni
-        # 1. azione FLOOD
+        #match = parser.OFPMatch(eth_dst=dst,eth_src=eth.src)
+        match = parser.OFPMatch(in_port=in_port)
+
         actions = []
         #print("Test")
-
-        #print("SWITCH: "+str(datapath.id))
+        print("SWITCH: "+str(datapath.id))
         #print("Info:   ")
         #print(nodesAndPort)
         try:
@@ -199,13 +125,10 @@ class HopByHopSwitch(app_manager.RyuApp):
                     actions.append(parser.OFPActionOutput(int(host.port.port_no)))
 
         #TODO: check this if
-        if dst_dpid is None:
+        '''if dst_dpid is None:
+            print("Not ffffffffffffffff\n")
             # print "DP: ", datapath.id, "Host not found: ", pkt_ip.dst
             return
-        '''if dst_dpid == datapath.id :
-            # da usare se l'host e' direttamente collegato
-            output_port = dst_port
-            actions = [parser.OFPActionOutput(output_port)]
         '''
         if(len(actions)!=0):
             inst = [
@@ -256,7 +179,7 @@ class HopByHopSwitch(app_manager.RyuApp):
 
         # host non trovato
         if destination_host_mac is None:
-            print("Non trovato")
+            #print("Non trovato")
             return
 
         pkt_out = packet.Packet()
