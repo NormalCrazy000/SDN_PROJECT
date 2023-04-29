@@ -196,8 +196,9 @@ class HopByHopSwitch(app_manager.RyuApp):
                 '''
         self.change_tree()
         #TODO
-        self.oldDataPath.pop(ev.msg.datapath.id)
+        self.oldDataPath.pop(ev.switch.dp.id)
         print("Switch leave")
+        print(ev.switch)
         # print(ev.msg.datapath)
         return
 
