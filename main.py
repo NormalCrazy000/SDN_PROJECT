@@ -1,6 +1,9 @@
 # Si richiede l'uso del topology discovery
 # ryu-manager --observe-links
-# Da gestire: 1) cambio di topologia
+# Da gestire:1)Chiedi quali eventi gestire per il cambio di topologia
+#            2)Evevnto reconect deve essere gestito come leave
+#            3)Gli host vengono gestiti come eventi?
+#            4)Vedi se il TODO serve
 #
 
 from ryu.base import app_manager
@@ -15,11 +18,12 @@ import networkx as nx
 
 class HopByHopSwitch(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
+
     def change_tree(self):
-        if(len(self.tree_old)!=0):
+        if len(self.tree_old) != 0:
             for datapath in self.oldDataPath.values():
                 self.del_flow(datapath, 1)
-            #print(ev)
+            # print(ev)
             self.tree_old = {}
             self.nodesAndPort = {}
 
@@ -45,7 +49,6 @@ class HopByHopSwitch(app_manager.RyuApp):
                                         match=parser.OFPMatch(in_port=int(host.port.port_no)))
                 datapath.send_msg(mod)
 
-
     def create_tree(self):
         net = nx.Graph()
         for link in get_all_link(self):
@@ -64,206 +67,77 @@ class HopByHopSwitch(app_manager.RyuApp):
         for switches in get_all_switch():
             switches.da
 
-    # TODO:
-    '''
-    def _request_stats(self, datapath):
-        self.logger.debug('send stats request: %016x', datapath.id)
-        ofproto = datapath.ofproto
-        parser = datapath.ofproto_parser
-
-        req = parser.OFPFlowStatsRequest(datapath)
-        datapath.send_msg(req)
-    
-    @set_ev_cls(ofp_event.EventOFPFlowStatsReply, MAIN_DISPATCHER)
-    def _flow_stats_reply_handler(self, ev):
-        body = ev.msg.body
-        print(ev.msg.datapath.id)
-        print(body)
-         for stat in sorted([flow for flow in body if flow.priority == 1],
-                           key=lambda flow: (flow.match['in_port'],
-                                             flow.match['eth_dst'])):
-            self.logger.info('%016x %8x %17s %8x %8d %8d',
-                             ev.msg.datapath.id,
-                             stat.match['in_port'], stat.match['eth_dst'],
-                             stat.instructions[0].actions[0].port,
-                             stat.packet_count, stat.byte_count)
-                             
-        return
-    '''
-
     @set_ev_cls(event.EventPortAdd)
     def _event_port_add_handler(self, ev):
-        # for switch in get_all_switch(self):
-
-        # msg = ev.switch.to_dict()
-        # self._rpc_broadcall('event_switch_enter', msg)
-        '''for datapath in self.oldDataPath():
-            self.del_flow(datapath, 1)
-        print(ev)
-        # self._request_stats(ev.msg.datapath)'''
         self.change_tree()
-        print("port add")
-
+        # print("port add")
         return
 
     @set_ev_cls(event.EventPortDelete)
     def _event_port_delete_handler(self, ev):
-        # for switch in get_all_switch(self):
-
-        # msg = ev.switch.to_dict()
-        # self._rpc_broadcall('event_switch_enter', msg)
-        '''for datapath in self.oldDataPath():
-            self.del_flow(datapath, 1)
-        print(ev)
-        # self._request_stats(ev.msg.datapath)'''
         self.change_tree()
-
-        print("port delete")
-
+        # print("port delete")
         return
 
     @set_ev_cls(event.EventPortModify)
     def _event_port_modify_handler(self, ev):
-        # for switch in get_all_switch(self):
-
-        # msg = ev.switch.to_dict()
-        # self._rpc_broadcall('event_switch_enter', msg)
-        '''for datapath in self.oldDataPath():
-            self.del_flow(datapath, 1)
-        print(ev)
-        # self._request_stats(ev.msg.datapath)'''
         self.change_tree()
-
-        print("port modify")
-
+        # print("port modify")
         return
 
     @set_ev_cls(event.EventLinkAdd)
     def _event_link_add_handler(self, ev):
-        # for switch in get_all_switch(self):
-
-        # msg = ev.switch.to_dict()
-        # self._rpc_broadcall('event_switch_enter', msg)
-        '''for datapath in self.oldDataPath():
-            self.del_flow(datapath, 1)
-        print(ev)
-        # self._request_stats(ev.msg.datapath)'''
         self.change_tree()
-
-        print("link add")
-
+        # print("link add")
         return
 
     @set_ev_cls(event.EventLinkDelete)
     def _event_link_delete_handler(self, ev):
-        # for switch in get_all_switch(self):
-
-        # msg = ev.switch.to_dict()
-        # self._rpc_broadcall('event_switch_enter', msg)
-        # self._request_stats(ev.msg.datapath)
         self.change_tree()
-
-        print("link delete")
-
+        # print("link delete")
         return
 
     @set_ev_cls(event.EventSwitchEnter)
     def _event_switch_enter_handler(self, ev):
-        # for switch in get_all_switch(self):
-
-        # msg = ev.switch.to_dict()
-        # self._rpc_broadcall('event_switch_enter', msg)
-        '''for datapath in self.oldDataPath():
-            self.del_flow(datapath, 1)
-        print(ev)
-        # self._request_stats(ev.msg.datapath)'''
         self.change_tree()
-
-        print("Switch enter")
-
+        # print("Switch enter")
         return
 
     @set_ev_cls(event.EventSwitchLeave)
     def _event_switch_leave_handler(self, ev):
-        # msg = ev.switch.to_dict()
-        # self._rpc_broadcall('event_switch_enter', msg)
-
-        ''' for datapath in self.oldDataPath():
-            if datapath == ev.msg.datapath:
-                self.oldDataPath.remove(datapath)
-            else:
-                self.del_flow(datapath, 1)
-                '''
         self.change_tree()
-        #TODO
+        # TODO
         self.oldDataPath.pop(ev.switch.dp.id)
-        print("Switch leave")
-        print(ev.switch)
+        # print("Switch leave")
+        # print(ev.switch)
         # print(ev.msg.datapath)
         return
 
     @set_ev_cls(event.EventSwitchReconnected)
     def _event_switch_reconnected_handler(self, ev):
-        # msg = ev.switch.to_dict()
-        # self._rpc_broadcall('event_switch_enter', msg)
-        tree_old = self.create_tree()
-        ''' for datapath in self.oldDataPath():
-            if datapath == ev.msg.datapath:
-                self.oldDataPath.remove(datapath)
-            else:
-                self.del_flow(datapath, 1)
-                '''
         self.change_tree()
-        print("Switch reconnected")
+        # print("Switch reconnected")
         # print(ev.msg.datapath)
         return
 
     @set_ev_cls(event.EventHostAdd)
     def _event_host_add_handler(self, ev):
-        # for switch in get_all_switch(self):
-
-        # msg = ev.switch.to_dict()
-        # self._rpc_broadcall('event_switch_enter', msg)
-        '''for datapath in self.oldDataPath():
-            self.del_flow(datapath, 1)
-        print(ev)
-        # self._request_stats(ev.msg.datapath)'''
         self.change_tree()
-        print("host add")
-
+        #print("host add")
         return
 
     @set_ev_cls(event.EventHostMove)
     def _event_host_add_handler(self, ev):
-        # for switch in get_all_switch(self):
-
-        # msg = ev.switch.to_dict()
-        # self._rpc_broadcall('event_switch_enter', msg)
-        '''for datapath in self.oldDataPath():
-            self.del_flow(datapath, 1)
-        print(ev)
-        # self._request_stats(ev.msg.datapath)'''
         self.change_tree()
-
-        print("host move")
-
+        #print("host move")
         return
 
     @set_ev_cls(event.EventHostDelete)
     def _event_host_delete_handler(self, ev):
-        # for switch in get_all_switch(self):
-
-        # msg = ev.switch.to_dict()
-        # self._rpc_broadcall('event_switch_enter', msg)
-        '''for datapath in self.oldDataPath():
-            self.del_flow(datapath, 1)
-        print(ev)
-        # self._request_stats(ev.msg.datapath)'''
         self.change_tree()
-
-        print("host add")
-
+        #print("host add")
         return
+
     def __init__(self, *args, **kwargs):
         super(HopByHopSwitch, self).__init__(*args, **kwargs)
         self.tree_old = {}
@@ -273,7 +147,7 @@ class HopByHopSwitch(app_manager.RyuApp):
     # tutti i pacchetti al controllore
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
-        print("Switch: " + str(ev.msg.datapath.id) + "----CONFIG_DISPATCHER")
+        #print("Switch: " + str(ev.msg.datapath.id) + "----CONFIG_DISPATCHER")
         datapath = ev.msg.datapath
         self.oldDataPath[datapath.id] = datapath
         ofproto = datapath.ofproto
@@ -295,16 +169,9 @@ class HopByHopSwitch(app_manager.RyuApp):
         )
         datapath.send_msg(mod)
 
-    # trova switch destinazione e porta dello switch
-    def find_destination_switch(self, destination_mac):
-        for host in get_all_host(self):
-            if host.mac == destination_mac:
-                return (host.port.dpid, host.port.port_no)
-        return (None, None)
-
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
-        #print("Switch: " + str(ev.msg.datapath.id) + "----MAIN_DISPATCHER")
+        # print("Switch: " + str(ev.msg.datapath.id) + "----MAIN_DISPATCHER")
         msg = ev.msg
         datapath = msg.datapath
         ofproto = datapath.ofproto
@@ -318,14 +185,14 @@ class HopByHopSwitch(app_manager.RyuApp):
         if eth.ethertype == ether_types.ETH_TYPE_ARP:
             self.proxy_arp(msg)
             return
-
+        #TODO: serve questo if?
         # ignora pacchetti non IPv4 (es. ARP, LLDP)
         if eth.ethertype != ether_types.ETH_TYPE_IP:
             return
         if (len(self.tree_old) == 0):
             self.tree_old = self.create_tree()
             # print edges
-            print(self.tree_old.edges.data())
+            #print(self.tree_old.edges.data())
             self.nodesAndPort = {}
             for (node, data) in self.tree_old.nodes(data=True):
                 self.nodesAndPort[str(node)] = []
@@ -346,26 +213,19 @@ class HopByHopSwitch(app_manager.RyuApp):
 
         actions = []
         # print("Test")
-        #print("SWITCH: " + str(datapath.id))
+        # print("SWITCH: " + str(datapath.id))
         # print("Info:   ")
         # print(nodesAndPort)
         try:
             for (port) in self.nodesAndPort[str(datapath.id)]:
-
                 if (int(port) != in_port):
-                    # print("Ports cazzo: " + str(port))
+                    # print("Ports: " + str(port))
                     actions.append(parser.OFPActionOutput(int(port)))
         except:
             print()
-
-        destination_mac = eth.dst
-
-        # trova switch destinazione
-        (dst_dpid, dst_port) = self.find_destination_switch(destination_mac)
-        # print(dst_dpid)
         for host in get_all_host(self):
             if host.port.dpid == datapath.id:
-                if (host.port.port_no != in_port):
+                if host.port.port_no != in_port:
                     actions.append(parser.OFPActionOutput(int(host.port.port_no)))
 
         # TODO: check this if
