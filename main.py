@@ -1,10 +1,6 @@
 # Si richiede l'uso del topology discovery
 # ryu-manager --observe-links
-# Da gestire:1)Chiedi quali eventi gestire per il cambio di topologia
-#            2)Evevnto reconect deve essere gestito come leave
-#            3)Gli host vengono gestiti come eventi?
-#            4)Vedi se il TODO serve
-#
+#Domande al prof: TODO serve quel if
 
 from ryu.base import app_manager
 from ryu.controller import ofp_event
