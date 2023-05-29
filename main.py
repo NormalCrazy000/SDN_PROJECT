@@ -1,7 +1,3 @@
-# Si richiede l'uso del topology discovery
-# ryu-manager --observe-links
-# Domande al prof: TODO serve quel if
-
 from ryu.base import app_manager
 from ryu.controller import ofp_event
 from ryu.controller.handler import set_ev_cls, CONFIG_DISPATCHER, MAIN_DISPATCHER
@@ -11,20 +7,18 @@ from ryu.topology.api import get_all_switch, get_all_link, get_all_host
 from ryu.lib.packet import packet, ethernet, ether_types, arp
 import networkx as nx
 
-
 class HopByHopSwitch(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
+    #Questa funzione cancella l'albero
     def change_tree(self):
-        # print("Cancella")
-        # if len(self.tree_old) != 0:
         for datapath in self.oldDataPath.values():
             self.del_flow(datapath, 1)
-        # print(ev)
         self.tree_old = {}
         self.nodesAndPort = {}
         self.switch_host = {}
 
+    #Questa funzione
     def create_list_hosts_switch(self):
         # lista con tutte le porte dello switch
         all_ports_connected = {}
